@@ -150,6 +150,18 @@ body.sidebar-collapsed.chat-active .composer{left:calc(72px + (100vw - 72px - mi
 .collapse-side:hover{border-color:#d5d5d5!important;background:#f6f6f6!important}
 body.sidebar-collapsed .side-head{align-items:center}
 
+
+.explore-page{width:min(1100px,100%);margin:0 auto;padding:38px 24px 34px}
+.explore-heading{margin:0 0 24px}.explore-heading h1{font-size:clamp(30px,4vw,42px);letter-spacing:-1.3px;margin:7px 0;color:#202123}.explore-heading h1 span{color:#b68b3c}.explore-heading p{margin:0;color:#777;font-size:14px}
+.map-search-panel{border:1px solid #e8e8e8;border-radius:18px;padding:20px;background:#fff;box-shadow:0 8px 28px #00000008}.map-search-panel label{display:block;font-size:12px;font-weight:650;color:#555;margin:0 0 8px}
+.map-search-row{display:flex;align-items:center;gap:9px;border:1px solid #dedede;border-radius:12px;padding:5px 6px 5px 13px;margin-bottom:15px}.map-search-icon{font-size:22px;color:#888}.map-search-row input{min-width:0;flex:1;border:0;outline:0;padding:9px 2px;font:inherit;color:#222;background:transparent}.map-search-row button{border:0;border-radius:9px;background:#202123;color:#fff;padding:11px 16px;font-size:12px;font-weight:650;cursor:pointer}.map-location{width:100%;border:1px solid #e5e5e5;border-radius:10px;padding:11px 12px;margin-bottom:15px;font:inherit}
+.map-chips{display:flex;flex-wrap:wrap;gap:8px}.map-chips button{border:1px solid #e8e8e8;background:#fafafa;border-radius:22px;padding:8px 12px;font-size:12px;color:#444;cursor:pointer}.map-chips button:hover{border-color:#c9a45c;background:#fbf8f1}
+.map-results-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 2px 11px}.map-results-head b,.map-results-head span{display:block}.map-results-head b{font-size:14px;color:#262626}.map-results-head span{font-size:11px;color:#888;margin-top:3px}.map-results-head a{font-size:12px;color:#87672e;text-decoration:none;white-space:nowrap}
+.map-frame-wrap{height:min(58vh,590px);min-height:340px;border:1px solid #e5e5e5;border-radius:16px;overflow:hidden;background:#f5f5f5}.map-frame-wrap iframe{width:100%;height:100%;border:0}.map-disclaimer{font-size:10px;color:#999;margin:9px 2px}
+body.explore-active .welcome,body.explore-active .answer,body.explore-active .composer,body.explore-active .suggestions,body.explore-active .sectiontitle,body.explore-active .plans{display:none!important}
+body.explore-active .content{width:100%;max-width:100%;padding:0;min-height:calc(100vh - 54px)}body.explore-active .explore-page{display:block!important}
+@media(max-width:760px){.explore-page{padding:25px 14px}.map-search-panel{padding:14px}.map-search-row{flex-wrap:wrap}.map-search-row button{width:100%}.map-frame-wrap{height:55vh;min-height:300px}.map-results-head{align-items:flex-start;flex-direction:column}}
+
 </style>
 </head>
 <body>
@@ -162,7 +174,7 @@ body.sidebar-collapsed .side-head{align-items:center}
     <button class="navitem" onclick="showNotice('Scheduled tasks are coming soon.')"><span class="navicon">◷</span>Scheduled</button>
     <button class="navitem" onclick="showNotice('Your file library is available in the composer.')"><span class="navicon">▤</span>Library</button>
     <button class="navitem" onclick="showNotice('Plugins are coming soon.')"><span class="navicon">◎</span>Plugins</button>
-    <button class="navitem" onclick="showNotice('Explore MELEEY tools and assistants.')"><span class="navicon">•••</span>Explore</button>
+    <button class="navitem" id="exploreNav" onclick="showExplore()"><span class="navicon">⌕</span>Explore</button>
   </nav>
   <div class="side-section-head"><span>Projects</span><button type="button" title="Create project" onclick="showNotice('Projects are coming soon.')">＋</button></div>
   <div class="project-empty">No projects yet</div>
@@ -174,6 +186,14 @@ body.sidebar-collapsed .side-head{align-items:center}
 <main class="main">
 <header class="topbar"><div class="crumb">Workspace&nbsp; / &nbsp;<b>AI Assistant</b></div><div class="topright"><span class="status" id="status">● Checking AI…</span><span class="planpill" id="planPill">FREE PLAN</span><button class="topbtn gold" id="loginButton" onclick="openAuth('login')">Log in</button><button class="topbtn" id="logoutButton" style="display:none" onclick="logout()">Log out</button></div></header>
 <div class="content">
+<section class="explore-page" id="explorePage" style="display:none">
+<div class="explore-heading"><div class="eyebrow">DISCOVER PLACES</div><h1>Explore <span>Maps</span></h1><p>Find restaurants, hotels and places around the world.</p></div>
+<div class="map-search-panel"><label for="mapSearch">What are you looking for?</label><div class="map-search-row"><span class="map-search-icon">⌕</span><input id="mapSearch" type="search" placeholder="e.g. Restaurants in Mogadishu, hotels in Paris…" onkeydown="if(event.key==='Enter')searchMapPlaces()"><button type="button" onclick="searchMapPlaces()">Search maps</button></div>
+<label for="mapLocation">Location (optional)</label><input class="map-location" id="mapLocation" type="text" placeholder="City, neighbourhood or address">
+<div class="map-chips"><button onclick="setMapCategory('Restaurants')">🍽 Restaurants</button><button onclick="setMapCategory('Hotels')">🏨 Hotels</button><button onclick="setMapCategory('Coffee shops')">☕ Cafés</button><button onclick="setMapCategory('Hospitals')">🏥 Hospitals</button><button onclick="setMapCategory('Shopping malls')">🛍 Shopping</button><button onclick="setMapCategory('Pharmacies')">💊 Pharmacies</button></div></div>
+<div class="map-results-head"><div><b id="mapResultTitle">Explore the map</b><span id="mapResultSubtitle">Search for a place to see it here</span></div><a id="openMapLink" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer">Open Google Maps ↗</a></div>
+<div class="map-frame-wrap"><iframe id="mapFrame" title="Explore places on Google Maps" src="https://www.google.com/maps?output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div>
+<p class="map-disclaimer">Map results and place details are provided by Google Maps. Information may change.</p></section>
 <section class="welcome"><div class="spark">✦</div><div class="eyebrow">WELCOME TO MELEEY AI</div><h1>What can we <span>create</span> today?</h1><p>Your ideas deserve clear answers. Ask anything and let's make progress.</p></section>
 <section class="answer" id="answer"><div class="answerhead"><span class="mini-logo">✦</span>MELEEY AI <span style="font-weight:400;color:#9aa1ac">· Conversation</span></div><div class="message-list" id="messageList"></div><div class="answertext" id="answertext"></div></section>
 <section class="composer"><textarea id="prompt" maxlength="8000" placeholder="Message MELEEY…"></textarea><div class="attach-row"><button class="attach-btn" type="button" onclick="document.getElementById('fileInput').click()">＋ Attach file</button><button class="attach-btn dictate-btn" id="dictateButton" type="button" onclick="toggleDictation()" title="Speak to MELEEY">🎙 Dictate</button><select id="dictateLanguage" class="dictate-language" aria-label="Dictation language" title="Dictation language"><option value="auto">Device language</option><option value="so-SO">Somali</option><option value="en-US">English</option><option value="ar-SA">Arabic</option><option value="fr-FR">French</option><option value="es-ES">Spanish</option><option value="pt-BR">Portuguese</option><option value="de-DE">German</option><option value="it-IT">Italian</option><option value="tr-TR">Turkish</option><option value="zh-CN">Chinese</option><option value="hi-IN">Hindi</option><option value="ru-RU">Russian</option><option value="sw-KE">Swahili</option><option value="nl-NL">Dutch</option><option value="ja-JP">Japanese</option><option value="ko-KR">Korean</option></select><span id="dictateStatus" class="dictate-status" aria-live="polite"></span><input id="fileInput" type="file" accept=".pdf,.docx,.txt,.md,.csv,.json" hidden onchange="handleFileSelect(event)"><div class="file-chip" id="fileChip"><span id="fileName"></span><button class="file-remove" type="button" onclick="removeAttachedFile()" aria-label="Remove file">×</button></div></div><div class="composefoot"><div class="tools"><span class="modeltag">✦ MELEEY Free · Groq</span><label class="web-toggle"><input id="webSearchToggle" type="checkbox"> Web search</label><span class="hint">Enter to send · Shift + Enter for new line</span></div><button class="send" id="send" onclick="sendMessage()">↑</button></div></section>
@@ -360,6 +380,11 @@ function toggleDictation(){
   input.dataset.dictationBase=input.value.trim()?(input.value.trim()+' '):'';
   try{recognition.start();}catch(error){status.textContent='Could not start microphone. Try again.';}
 }
+
+function showExplore(){document.body.classList.remove('chat-active');document.body.classList.add('explore-active');document.getElementById('explorePage').style.display='block';document.getElementById('answer').style.display='none';const crumb=document.querySelector('.crumb');if(crumb)crumb.innerHTML='Workspace&nbsp; / &nbsp;<b>Explore Maps</b>';document.querySelectorAll('.main-nav .navitem').forEach(x=>x.classList.remove('active'));document.getElementById('exploreNav')?.classList.add('active');}
+function setMapCategory(category){const input=document.getElementById('mapSearch');input.value=category;input.focus();searchMapPlaces();}
+function searchMapPlaces(){const term=document.getElementById('mapSearch').value.trim();const location=document.getElementById('mapLocation').value.trim();if(!term){document.getElementById('mapSearch').focus();return;}const query=location?term+' in '+location:term;document.getElementById('mapFrame').src='https://www.google.com/maps?q='+encodeURIComponent(query)+'&output=embed';document.getElementById('mapResultTitle').textContent=query;document.getElementById('mapResultSubtitle').textContent='Showing map search for '+query;document.getElementById('openMapLink').href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(query);}
+
 function showNotice(message){answer.style.display='block';answerText.classList.remove('error');answerText.textContent=message;messageList.innerHTML='';}
 function showFreePlan(){document.getElementById('freeBackdrop').classList.add('open');}
 function closeFreePlan(){document.getElementById('freeBackdrop').classList.remove('open');}
