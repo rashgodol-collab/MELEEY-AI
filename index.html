@@ -112,12 +112,44 @@ body.chat-active .topbar{position:sticky;top:0}
  .message-bubble,.message.assistant .message-bubble{font-size:15px}
 }
 
+
+/* Professional collapsible navigation */
+.layout{transition:grid-template-columns .24s ease}
+.sidebar{transition:width .24s ease,padding .24s ease;min-width:0}
+.collapse-side{width:34px;height:34px;display:grid;place-items:center;font-size:18px;transition:transform .2s,background .2s}
+.collapse-side:hover{background:#f0f0f0;color:#222}
+body.sidebar-collapsed .layout{grid-template-columns:72px minmax(0,1fr)}
+body.sidebar-collapsed .sidebar{padding:14px 9px 12px;align-items:center}
+body.sidebar-collapsed .side-head{width:100%;flex-direction:column;gap:10px;padding:0 0 8px}
+body.sidebar-collapsed .brand{font-size:0;letter-spacing:0}
+body.sidebar-collapsed .brand span{font-size:16px;letter-spacing:-.5px}
+body.sidebar-collapsed .collapse-side{transform:rotate(180deg)}
+body.sidebar-collapsed .newchat{width:48px;height:42px;padding:0;text-align:center;font-size:0;display:grid;place-items:center}
+body.sidebar-collapsed .newchat::first-letter{font-size:20px}
+body.sidebar-collapsed .navitem{width:48px;height:42px;padding:0;display:grid;place-items:center;font-size:0}
+body.sidebar-collapsed .navicon{width:auto;font-size:19px}
+body.sidebar-collapsed .side-section-head{width:100%;justify-content:center;font-size:0;padding:12px 0 4px}
+body.sidebar-collapsed .side-section-head button{display:none}
+body.sidebar-collapsed .project-empty,
+body.sidebar-collapsed .history-tools,
+body.sidebar-collapsed .history-list,
+body.sidebar-collapsed .profile>div:not(.avatar),
+body.sidebar-collapsed .profile-upgrade{display:none}
+body.sidebar-collapsed .sidebottom{width:100%;display:flex;justify-content:center}
+body.sidebar-collapsed .profile{justify-content:center}
+body.sidebar-collapsed .avatar{flex:0 0 34px}
+body.sidebar-collapsed.chat-active .composer{left:calc(72px + (100vw - 72px - min(790px,100vw - 120px))/2);width:min(790px,calc(100vw - 120px))}
+@media(max-width:760px){
+ body.sidebar-collapsed .layout{grid-template-columns:1fr}
+ body.sidebar-collapsed .sidebar{display:none}
+}
+
 </style>
 </head>
 <body>
 <div class="layout">
 <aside class="sidebar">
-  <div class="side-head"><div class="brand">MELEEY <span>AI</span></div><button class="collapse-side" type="button" title="Collapse sidebar" onclick="document.body.classList.toggle('sidebar-collapsed')">◧</button></div>
+  <div class="side-head"><div class="brand">MELEEY <span>AI</span></div><button class="collapse-side" type="button" title="Collapse sidebar" onclick="toggleSidebar()" aria-label="Collapse sidebar">◧</button></div>
   <button class="newchat" onclick="newChat()">✎ &nbsp; New chat</button>
   <nav class="main-nav">
     <button class="navitem" onclick="showNotice('Image generation will be available soon.')"><span class="navicon">▧</span>Images</button>
@@ -276,6 +308,8 @@ function renderMessages(messages){
  });
 }
 function openConversation(id){document.body.classList.add("chat-active");const chat=conversations.find(x=>x.id===id);if(!chat)return;activeConversationId=id;history=chat.messages.filter(m=>m.role==='user'||m.role==='assistant').map(m=>({role:m.role,content:m.content})).slice(-20);answer.style.display='block';answerText.textContent='';renderMessages(chat.messages);renderConversationList();input.focus();}
+function toggleSidebar(){const collapsed=document.body.classList.toggle('sidebar-collapsed');const button=document.querySelector('.collapse-side');if(button){button.title=collapsed?'Expand sidebar':'Collapse sidebar';button.setAttribute('aria-label',button.title);}try{localStorage.setItem('meleey_sidebar_collapsed',collapsed?'1':'0');}catch{}}
+try{if(localStorage.getItem('meleey_sidebar_collapsed')==='1'){document.body.classList.add('sidebar-collapsed');const b=document.querySelector('.collapse-side');if(b){b.title='Expand sidebar';b.setAttribute('aria-label','Expand sidebar');}}}catch{}
 function newChat(){if(activeConversationId){const previous=conversations.find(x=>x.id===activeConversationId);if(previous){previous.updatedAt=previous.updatedAt||Date.now();saveConversations();}}const search=document.getElementById("historySearch");if(search)search.value="";document.body.classList.remove("chat-active");activeConversationId=null;history=[];input.value="";answer.style.display="none";answerText.textContent="";messageList.innerHTML="";renderConversationList();input.focus();}
 function usePrompt(value){input.value=value;input.focus();input.setSelectionRange(input.value.length,input.value.length);}
 function removeAttachedFile(){attachedFileText='';attachedFileName='';document.getElementById('fileInput').value='';document.getElementById('fileChip').style.display='none';}
