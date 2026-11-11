@@ -199,7 +199,7 @@ body.explore-active #answer,body.explore-active #messageList,body.explore-active
   <div class="sidebottom"><div class="profile"><div class="avatar">M</div><div><b>MELEEY account</b><br><span>Free plan</span></div><button class="profile-upgrade" onclick="showUpgrade()">Upgrade</button></div></div>
 </aside>
 <main class="main">
-<header class="topbar"><div class="crumb">Workspace&nbsp; / &nbsp;<b>AI Assistant</b></div><button class="topbtn back-to-chat" id="exitExploreBtn" type="button" onclick="exitExplore()">← Back to chat</button><div class="topright"><span class="status" id="status">● Checking AI…</span><span class="planpill" id="planPill">FREE PLAN</span><button class="topbtn gold" id="loginButton" onclick="openAuth('login')">Log in</button><button class="topbtn" id="logoutButton" style="display:none" onclick="logout()">Log out</button></div></header>
+<header class="topbar"><div class="crumb">Workspace&nbsp; / &nbsp;<b>AI Assistant</b></div><button class="topbtn back-to-chat" id="exitExploreBtn" type="button" onclick="exitExplore()">← Back to chat</button><div class="topright"><span class="status" id="status">● Checking AI…</span><span class="planpill" id="planPill">FREE PLAN</span><button class="topbtn gold" id="loginButton" onclick="openAuth('login')">Log in</button><button class="topbtn" id="logoutButton" style="display:none" onclick="logout()">Log out</button><button class="topbtn" id="cloudSyncButton" style="display:none" onclick="syncCloudConversations()">Save chats to Cloud</button></div></header>
 <div class="content">
 <section class="explore-page" id="explorePage" style="display:none">
 <div class="explore-heading"><div class="eyebrow">DISCOVER PLACES</div><h1>Explore <span>Maps</span></h1><p>Find restaurants, hotels and places around the world.</p></div>
@@ -233,6 +233,38 @@ let conversations=[],activeConversationId=null,history=[],authMode='login',authC
 try{const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');if(Array.isArray(saved))conversations=saved.filter(x=>x&&typeof x.id==='string'&&Array.isArray(x.messages));}catch{conversations=[];}
 try{session=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch{session=null;}
 function saveConversations(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(conversations));}catch{showNotice('Browser storage is full. Please export or delete some old chats before continuing.');}}
+async function syncCloudConversations(){
+ const button=document.getElementById('cloudSyncButton');
+ if(!session?.access_token||!session?.user?.id){showNotice('Please log in before saving chats to Cloud.');return;}
+ if(!authConfig)await loadAuthConfig();
+ if(!authConfig?.url||!authConfig?.anonKey){showNotice('Cloud storage is not configured.');return;}
+ if(!conversations.length){showNotice('There are no local conversations to back up yet.');return;}
+ if(!confirm('Save the conversations currently in this browser to your MELEEY account Cloud storage? Existing Cloud chats will be kept and safely merged. Nothing will be deleted.'))return;
+ const original=button.textContent;button.disabled=true;button.textContent='Saving…';
+ try{
+  const endpoint=authConfig.url+'/rest/v1/meleey_conversations';
+  const headers={'apikey':authConfig.anonKey,'Authorization':'Bearer '+session.access_token,'Content-Type':'application/json'};
+  const read=await fetch(endpoint+'?select=id,conversation,updated_at&user_id=eq.'+encodeURIComponent(session.user.id),{headers,cache:'no-store'});
+  const remoteRows=await read.json().catch(()=>[]);
+  if(!read.ok)throw new Error(remoteRows.message||remoteRows.error||'Could not read Cloud conversations.');
+  if(!Array.isArray(remoteRows))throw new Error('Cloud returned an unexpected response.');
+  const merged=new Map();
+  remoteRows.forEach(row=>{if(row&&row.id&&row.conversation&&typeof row.conversation==='object')merged.set(String(row.id),row.conversation);});
+  conversations.forEach(chat=>{
+   const remote=merged.get(String(chat.id));
+   const remoteTime=remote?Number(remote.updatedAt)||Date.parse(remote.updated_at||'')||0:0;
+   const localTime=Number(chat.updatedAt)||0;
+   if(!remote||localTime>=remoteTime)merged.set(String(chat.id),chat);
+  });
+  const combined=Array.from(merged.values()).filter(c=>c&&typeof c.id==='string'&&Array.isArray(c.messages));
+  const payload=combined.map(chat=>({id:chat.id,user_id:session.user.id,conversation:chat,updated_at:new Date(Number(chat.updatedAt)||Date.now()).toISOString()}));
+  const write=await fetch(endpoint+'?on_conflict=id',{method:'POST',headers:{...headers,'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(payload)});
+  if(!write.ok){const err=await write.json().catch(()=>({}));throw new Error(err.message||err.error||'Cloud save failed.');}
+  conversations=combined;saveConversations();renderConversationList();
+  showNotice('Cloud backup complete. '+combined.length+' conversations are saved to your MELEEY account. No chats were deleted.');
+ }catch(err){showNotice('Cloud backup could not finish: '+(err.message||'Please try again.'));}
+ finally{button.disabled=false;button.textContent=original;}
+}
 function renderConversationList(){
   historyList.innerHTML='';
   const term=(document.getElementById('historySearch')?.value||'').trim().toLowerCase();
@@ -557,7 +589,7 @@ function openAuth(mode){authMode=mode;document.getElementById('authBackdrop').cl
 function closeAuth(){document.getElementById('authBackdrop').classList.remove('open');}
 function toggleAuthMode(){authMode=authMode==='login'?'signup':'login';document.getElementById('authMessage').textContent='';renderAuthMode();}
 function renderAuthMode(){const signup=authMode==='signup';document.getElementById('authTitle').textContent=signup?'Create your account':'Welcome back';document.getElementById('authDescription').textContent=signup?'Create a free MELEEY AI account with your email.':'Log in to your MELEEY AI account.';document.getElementById('authSubmit').textContent=signup?'Create account':'Log in';document.getElementById('authSwitch').textContent=signup?'Already have an account? Log in':'Create a free account';document.getElementById('authPassword').autocomplete=signup?'new-password':'current-password';}
-function renderAccount(){const logged=Boolean(session?.access_token&&session?.user);document.getElementById('loginButton').style.display=logged?'none':'inline-block';document.getElementById('logoutButton').style.display=logged?'inline-block':'none';document.getElementById('planPill').textContent='FREE PLAN';const profile=document.querySelector('.profile');if(profile){const label=logged?(session.user.user_metadata?.full_name||session.user.email||'Account'):'Guest';const initial=(label[0]||'U').toUpperCase();profile.innerHTML='<div class="avatar">'+initial+'</div><div><b></b><br><span style="color:#8d97a6">Free plan</span></div>';profile.querySelector('b').textContent=label;}}
+function renderAccount(){const logged=Boolean(session?.access_token&&session?.user);document.getElementById('loginButton').style.display=logged?'none':'inline-block';document.getElementById('logoutButton').style.display=logged?'inline-block':'none';document.getElementById('cloudSyncButton').style.display=logged?'inline-block':'none';document.getElementById('planPill').textContent='FREE PLAN';const profile=document.querySelector('.profile');if(profile){const label=logged?(session.user.user_metadata?.full_name||session.user.email||'Account'):'Guest';const initial=(label[0]||'U').toUpperCase();profile.innerHTML='<div class="avatar">'+initial+'</div><div><b></b><br><span style="color:#8d97a6">Free plan</span></div>';profile.querySelector('b').textContent=label;}}
 async function loadAuthConfig(){try{const r=await fetch('/api/auth-config',{cache:'no-store'});const d=await r.json();if(d.configured)authConfig=d;}catch{}renderAccount();}
 async function authRequest(path,body){if(!authConfig)throw new Error('Login setup is incomplete. Add SUPABASE_URL and SUPABASE_ANON_KEY in Vercel.');const r=await fetch(authConfig.url+'/auth/v1/'+path,{method:'POST',headers:{'Content-Type':'application/json','apikey':authConfig.anonKey},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.msg||d.message||d.error_description||d.error||'Authentication failed.');return d;}
 document.getElementById('authForm').addEventListener('submit',async e=>{e.preventDefault();const button=document.getElementById('authSubmit'),message=document.getElementById('authMessage'),email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value;button.disabled=true;button.textContent='Please wait…';message.textContent='';try{if(!authConfig)await loadAuthConfig();const data=authMode==='signup'?await authRequest('signup',{email,password}):await authRequest('token?grant_type=password',{email,password});if(data.access_token&&data.user){session={access_token:data.access_token,refresh_token:data.refresh_token,user:data.user};localStorage.setItem(SESSION_KEY,JSON.stringify(session));renderAccount();closeAuth();}else if(authMode==='signup'){message.style.color='#32835b';message.textContent='Account created. Check your email to confirm, then log in.';}else{throw new Error('Login did not return an active session.');}}catch(err){message.style.color='#b54747';message.textContent=err.message||'Please try again.';}finally{button.disabled=false;renderAuthMode();}});
