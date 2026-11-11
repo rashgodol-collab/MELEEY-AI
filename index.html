@@ -33,22 +33,73 @@ body.chat-active .message-list{padding-bottom:12px}
 
 .history-group-title{padding:15px 12px 7px;color:var(--muted,#929292);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
 .history-row.active .history-item{font-weight:600}
+
+/* ChatGPT-inspired light workspace */
+:root{--bg:#fff;--paper:#fff;--ink:#202123;--muted:#777;--line:#e5e5e5;--nav:#fff;--navmuted:#343434;--soft:#f4f4f4;--shadow:0 8px 28px #0000000b}
+.layout{grid-template-columns:280px minmax(0,1fr)}
+.sidebar{background:#fff;color:#202123;border-right:1px solid #e7e7e7;padding:14px 10px 12px;gap:7px;position:sticky;overflow:hidden}
+.side-head{display:flex;align-items:center;justify-content:space-between;padding:0 8px 10px}
+.brand{font-size:20px;letter-spacing:-.5px;color:#202123}.brand span{color:#b68b3c}
+.collapse-side,.side-section-head button{border:0;background:transparent;color:#777;border-radius:7px;padding:7px;cursor:pointer}
+.newchat{background:#f3f3f3;border:0;color:#222;border-radius:10px;text-align:left;padding:11px 13px;font-weight:550;margin:0 2px 4px}
+.newchat:hover,.navitem:hover,.side-section-head button:hover{background:#ededed;color:#222}
+.main-nav{display:flex;flex-direction:column;gap:1px}
+.navitem{color:#383838;padding:9px 10px;margin:0;border-radius:9px;font-size:14px}
+.navitem.active,.navitem:hover{background:#f1f1f1;color:#222}
+.navicon{color:#555;width:28px;font-size:16px}
+.side-section-head{display:flex;justify-content:space-between;align-items:center;color:#777;font-size:13px;font-weight:600;padding:13px 7px 4px;margin-top:4px}
+.side-section-head button{font-size:18px;padding:3px 7px}
+.project-empty{color:#b3b3b3;font-size:13px;padding:8px 8px 14px}
+.recent-head{margin-top:1px}
+.history-tools{display:flex;gap:5px;padding:0 4px 5px}
+.history-tools input{background:#f7f7f7;color:#333;border:1px solid #eee;border-radius:8px;font-size:12px}
+.history-tools input::placeholder{color:#999}
+.history-delete-all{background:#fff;color:#777;border:1px solid #e6e6e6;border-radius:7px}
+.history-list{max-height:none;flex:1;min-height:100px;overflow:auto;gap:2px}
+.history-group-title{padding:12px 9px 5px;color:#888;font-size:11px;font-weight:600;text-transform:none;letter-spacing:0}
+.history-row{position:relative;gap:0;padding:0 2px;border-radius:8px}
+.history-row:hover,.history-row.active{background:#f1f1f1}
+.history-item{padding:9px 8px;color:#333}
+.history-title{font-size:13px;font-weight:450;color:#303030}
+.history-preview,.history-meta{display:none}
+.history-row:hover .history-item,.history-row.active .history-item{color:#222}
+.history-row:hover .history-preview,.history-row.active .history-preview{color:#777}
+.history-action{flex:0 0 29px;width:29px;height:29px;color:#777;opacity:0}
+.history-row:hover .history-action,.history-row.active .history-action{opacity:1}
+.history-action.menu-trigger{font-size:18px;opacity:1}
+.history-menu{position:absolute;right:5px;top:35px;z-index:25;width:210px;padding:6px;background:#fff;border:1px solid #e6e6e6;border-radius:13px;box-shadow:0 8px 30px #0002}
+.history-menu button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:9px 11px;border-radius:7px;color:#292929;font-size:13px;cursor:pointer}
+.history-menu button:hover{background:#f2f2f2}
+.history-menu .danger{color:#d33}
+.history-menu .menu-separator{height:1px;background:#eee;margin:5px 4px}
+.history-empty{color:#999;padding:9px;font-size:12px}
+.sidebottom{border-top:1px solid #eee;padding:12px 5px 0;margin-top:5px}
+.profile{color:#333;font-size:12px}.profile span{color:#888!important}.avatar{background:#e8e8e8;color:#555}
+.profile-upgrade{margin-left:auto;border:1px solid #ddd;background:white;border-radius:20px;padding:8px 12px;font-size:12px;cursor:pointer}
+.main{background:#fff}.topbar{height:54px;border:0;background:#fff;padding:0 28px}
+.crumb{color:#777}.crumb b{color:#333}
+.content{background:#fff}
+@media(max-width:760px){.layout{grid-template-columns:1fr}.sidebar{display:none}}
 </style>
 </head>
 <body>
 <div class="layout">
 <aside class="sidebar">
-  <div class="brand">MELEEY <span>AI</span></div><div class="tagline">THINK · CREATE · DISCOVER</div>
-  <button class="newchat" onclick="newChat()">＋ &nbsp; New conversation</button>
-  <div class="navlabel">Recent conversations</div><div class="history-tools"><input id="historySearch" type="search" placeholder="Search chats…" oninput="renderConversationList()" aria-label="Search chat history"><button class="history-delete-all" type="button" onclick="deleteAllConversations()" title="Delete all conversations">Clear all</button></div><div class="history-list" id="historyList"><div class="history-empty">Your conversations will appear here.</div></div><div class="navlabel">Workspace</div>
-  <button class="navitem active"><span class="navicon">✦</span>AI Assistant</button><button class="navitem" onclick="showFreePlan()"><span class="navicon">◉</span>Free plan</button><button class="navitem upgrade-link" onclick="showUpgrade()"><span class="navicon">♛</span>MELEEY Pro</button>
-  <button class="navitem" onclick="showNotice('Research tools are coming soon.')"><span class="navicon">⌕</span>Research</button>
-  <button class="navitem" onclick="showNotice('Cloud Library will be available after storage is connected.')"><span class="navicon">▤</span>My Library</button>
-  <div class="navlabel">Discover</div>
-  <button class="navitem" onclick="usePrompt('Help me write a professional email about: ')"><span class="navicon">✎</span>Writing assistant</button>
-  <button class="navitem" onclick="usePrompt('Explain this code step by step: ')"><span class="navicon">⌘</span>Code assistant</button>
-  <button class="navitem" onclick="usePrompt('Create a practical plan for: ')"><span class="navicon">◈</span>Planning</button>
-  <div class="sidebottom"><div class="profile"><div class="avatar">R</div><div><b>Rash</b><br><span style="color:#8d97a6">Free plan</span></div></div></div>
+  <div class="side-head"><div class="brand">MELEEY <span>AI</span></div><button class="collapse-side" type="button" title="Collapse sidebar" onclick="document.body.classList.toggle('sidebar-collapsed')">◧</button></div>
+  <button class="newchat" onclick="newChat()">✎ &nbsp; New chat</button>
+  <nav class="main-nav">
+    <button class="navitem" onclick="showNotice('Image generation will be available soon.')"><span class="navicon">▧</span>Images</button>
+    <button class="navitem" onclick="showNotice('Scheduled tasks are coming soon.')"><span class="navicon">◷</span>Scheduled</button>
+    <button class="navitem" onclick="showNotice('Your file library is available in the composer.')"><span class="navicon">▤</span>Library</button>
+    <button class="navitem" onclick="showNotice('Plugins are coming soon.')"><span class="navicon">◎</span>Plugins</button>
+    <button class="navitem" onclick="showNotice('Explore MELEEY tools and assistants.')"><span class="navicon">•••</span>Explore</button>
+  </nav>
+  <div class="side-section-head"><span>Projects</span><button type="button" title="Create project" onclick="showNotice('Projects are coming soon.')">＋</button></div>
+  <div class="project-empty">No projects yet</div>
+  <div class="side-section-head recent-head"><span>Recents</span><div><button type="button" title="Search chats" onclick="document.getElementById('historySearch').focus()">⌕</button><button type="button" title="New chat" onclick="newChat()">✎</button></div></div>
+  <div class="history-tools"><input id="historySearch" type="search" placeholder="Search chats…" oninput="renderConversationList()" aria-label="Search chat history"><button class="history-delete-all" type="button" onclick="deleteAllConversations()" title="Delete all conversations">Clear all</button></div>
+  <div class="history-list" id="historyList"><div class="history-empty">Your conversations will appear here.</div></div>
+  <div class="sidebottom"><div class="profile"><div class="avatar">M</div><div><b>MELEEY account</b><br><span>Free plan</span></div><button class="profile-upgrade" onclick="showUpgrade()">Upgrade</button></div></div>
 </aside>
 <main class="main">
 <header class="topbar"><div class="crumb">Workspace&nbsp; / &nbsp;<b>AI Assistant</b></div><div class="topright"><span class="status" id="status">● Checking AI…</span><span class="planpill" id="planPill">FREE PLAN</span><button class="topbtn gold" id="loginButton" onclick="openAuth('login')">Log in</button><button class="topbtn" id="logoutButton" style="display:none" onclick="logout()">Log out</button></div></header>
@@ -81,80 +132,21 @@ function saveConversations(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify
 function renderConversationList(){
   historyList.innerHTML='';
   const term=(document.getElementById('historySearch')?.value||'').trim().toLowerCase();
-  const now=new Date();
-  const todayStart=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
-  const yesterdayStart=todayStart-86400000;
-  const weekStart=todayStart-7*86400000;
-  const sorted=[...conversations].sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
-  const visible=sorted.filter(chat=>{
-    const title=(chat.title||'New conversation').toLowerCase();
-    const content=(chat.messages||[]).map(m=>m.content||'').join(' ').toLowerCase();
-    return !term||title.includes(term)||content.includes(term);
-  });
-  if(!visible.length){
-    const empty=document.createElement('div');
-    empty.className='history-empty';
-    empty.textContent=conversations.length?(term?'No matching conversations.':'Your conversations will appear here.'):'Your conversations will appear here.';
-    historyList.appendChild(empty);
-    return;
-  }
-  const groups=[
-    {name:'Today',items:[]},
-    {name:'Yesterday',items:[]},
-    {name:'Previous 7 days',items:[]},
-    {name:'Older',items:[]}
-  ];
-  visible.forEach(chat=>{
-    const stamp=Number(chat.updatedAt)||0;
-    const group=stamp>=todayStart?groups[0]:stamp>=yesterdayStart?groups[1]:stamp>=weekStart?groups[2]:groups[3];
-    group.items.push(chat);
-  });
-  groups.forEach(group=>{
-    if(!group.items.length)return;
-    const heading=document.createElement('div');
-    heading.className='history-group-title';
-    heading.textContent=group.name;
-    historyList.appendChild(heading);
-    group.items.forEach(chat=>{
-      const row=document.createElement('div');
-      row.className='history-row'+(chat.id===activeConversationId?' active':'');
-      const b=document.createElement('button');
-      b.className='history-item';
-      b.type='button';
-      b.title=chat.title||'New conversation';
-      const title=document.createElement('span');
-      title.className='history-title';
-      title.textContent=chat.title||'New conversation';
-      const messages=Array.isArray(chat.messages)?chat.messages:[];
-      const latest=[...messages].reverse().find(m=>m&&m.content);
-      const preview=document.createElement('span');
-      preview.className='history-preview';
-      preview.textContent=latest?String(latest.content).replace(/\\s+/g,' ').trim():'No messages yet';
-      const meta=document.createElement('span');
-      meta.className='history-meta';
-      const stamp=Number(chat.updatedAt)||0;
-      meta.textContent=stamp?new Date(stamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'';
-      b.append(title,preview,meta);
-      b.onclick=()=>openConversation(chat.id);
-      const rename=document.createElement('button');
-      rename.className='history-action rename';
-      rename.type='button';
-      rename.textContent='✎';
-      rename.title='Rename conversation';
-      rename.setAttribute('aria-label','Rename conversation');
-      rename.onclick=()=>renameConversation(chat.id);
-      const del=document.createElement('button');
-      del.className='history-action';
-      del.type='button';
-      del.textContent='×';
-      del.title='Delete conversation';
-      del.setAttribute('aria-label','Delete conversation');
-      del.onclick=()=>deleteConversation(chat.id);
-      row.append(b,rename,del);
-      historyList.appendChild(row);
+  const sorted=[...conversations].filter(c=>!c.archived).sort((a,b)=>(Number(b.pinned)||0)-(Number(a.pinned)||0)||(b.updatedAt||0)-(a.updatedAt||0));
+  const visible=sorted.filter(chat=>{const title=(chat.title||'New chat').toLowerCase();const content=(chat.messages||[]).map(m=>m.content||'').join(' ').toLowerCase();return !term||title.includes(term)||content.includes(term);});
+  if(!visible.length){const empty=document.createElement('div');empty.className='history-empty';empty.textContent=conversations.length?(term?'No matching chats.':'Your conversations will appear here.'):'Your conversations will appear here.';historyList.appendChild(empty);return;}
+  const groups=[{name:'Pinned',items:visible.filter(c=>c.pinned)},{name:'Today',items:visible.filter(c=>!c.pinned&&new Date(c.updatedAt||0).toDateString()===new Date().toDateString())},{name:'Previous',items:visible.filter(c=>!c.pinned&&new Date(c.updatedAt||0).toDateString()!==new Date().toDateString())}];
+  groups.forEach(group=>{if(!group.items.length)return;const heading=document.createElement('div');heading.className='history-group-title';heading.textContent=group.name;historyList.appendChild(heading);
+    group.items.forEach(chat=>{const row=document.createElement('div');row.className='history-row'+(chat.id===activeConversationId?' active':'');
+      const b=document.createElement('button');b.className='history-item';b.type='button';b.title=chat.title||'New chat';const title=document.createElement('span');title.className='history-title';title.textContent=chat.title||'New chat';b.append(title);b.onclick=()=>openConversation(chat.id);
+      const menuBtn=document.createElement('button');menuBtn.className='history-action menu-trigger';menuBtn.type='button';menuBtn.textContent='···';menuBtn.title='Chat options';menuBtn.onclick=e=>{e.stopPropagation();document.querySelectorAll('.history-menu').forEach(x=>x.remove());const menu=document.createElement('div');menu.className='history-menu';
+      const item=(label,fn,cls='')=>{const x=document.createElement('button');x.type='button';x.textContent=label;x.className=cls;x.onclick=e=>{e.stopPropagation();menu.remove();fn();};menu.appendChild(x);};
+      item('✎   Rename',()=>renameConversation(chat.id));item(chat.pinned?'⌖   Unpin':'⌖   Pin',()=>{chat.pinned=!chat.pinned;saveConversations();renderConversationList();});item('↗   Share',()=>shareConversation(chat.id));const sep=()=>{const d=document.createElement('div');d.className='menu-separator';menu.appendChild(d);};sep();item(chat.archived?'▣   Restore from archive':'▣   Archive',()=>{chat.archived=!chat.archived;saveConversations();renderConversationList();});item('▱   Move to project',()=>showNotice('Projects are coming soon.'));sep();item('♙   Lock chat',()=>showNotice('Chat lock is not enabled yet.' ));item('♧   Delete',()=>deleteConversation(chat.id),'danger');row.appendChild(menu);document.addEventListener('click',()=>menu.remove(),{once:true});};
+      row.append(b,menuBtn);historyList.appendChild(row);
     });
   });
 }
+function shareConversation(id){const chat=conversations.find(c=>c.id===id);if(!chat)return;const textValue=(chat.messages||[]).map(m=>(m.role==='user'?'You: ':'MELEEY AI: ')+(m.content||'')).join('\n\n');if(navigator.share){navigator.share({title:chat.title||'MELEEY chat',text:textValue}).catch(()=>{});}else if(navigator.clipboard){navigator.clipboard.writeText(textValue).then(()=>showNotice('Chat copied to clipboard.')).catch(()=>showNotice('Could not share this chat.'));}else showNotice('Sharing is not available in this browser.');}
 function rateMessage(message,rating){message.rating=message.rating===rating?0:rating;saveConversations();renderConversationList();const chat=conversations.find(x=>x.id===activeConversationId);if(chat)renderMessages(chat.messages);showNotice(message.rating?'Thanks for your feedback.':'Your feedback was cleared.');}
 function detectSpeechLanguage(text){
   const s=String(text||'');
