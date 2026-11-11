@@ -1,23 +1,34 @@
 # MELEEY AI
 
-MELEEY AI is a dark-and-gold AI assistant web app.
+MELEEY AI is a responsive Somali/English AI chat app with a dark-and-gold interface.
 
-## Features
+## Current Step 1 features
 - Responsive chat interface
-- Server-side AI endpoint at `/api/chat`
-- Conversation context for recent messages
-- API key kept on the server, never in browser code
+- Server-side Free AI endpoint at `/api/chat` using Groq
+- Health endpoint at `/api/health`
+- Recent conversation context (kept in the browser session)
+- Server-side API key handling
+- Free plan: $0
+- Pro plan display: $5/month (checkout is not enabled yet)
 
-## Deploy the full AI app with Vercel
-1. Sign in to Vercel using GitHub.
-2. Import `rashgodol-collab/MELEEY-AI`.
-3. In Project Settings → Environment Variables, add:
-   - Name: `OPENAI_API_KEY`
-   - Value: your private API key from the AI provider
-4. Optionally add `OPENAI_MODEL` with a model available to your API account. Default: `gpt-4o-mini`.
-5. Deploy the project.
+## Deploy on Vercel
+1. Import `rashgodol-collab/MELEEY-AI` into Vercel.
+2. In Project Settings → Environment Variables, add:
+   - Name: `GROQ_API_KEY`
+   - Value: your private Groq API key
+3. Optional:
+   - `GROQ_MODEL` — a model supported by your Groq account. Default: `openai/gpt-oss-120b`.
+4. Deploy or redeploy after changing environment variables.
 
-Never put the API key in `index.html`, commit it to GitHub, or share it in chat. API usage may incur provider charges.
+## Important security notes
+- Never put an API key in `index.html`, commit it to GitHub, or share it in chat.
+- Add secrets only in Vercel Environment Variables.
+- API use is subject to the provider's free-tier limits and availability.
 
-## Important
-The frontend and backend code are in this repository, but live AI replies require deployment and a valid API key. Live web search is not yet implemented; the assistant is instructed not to claim it has browsed the internet.
+## Not implemented yet
+- Live web search and sourced citations
+- File uploads and image understanding
+- User accounts and persistent cloud chat history
+- Pro checkout, subscriptions, and payment verification
+
+The Pro price shown in the interface is a planned price only. Do not charge users until secure authentication, payment processing, and server-side plan verification are implemented.
