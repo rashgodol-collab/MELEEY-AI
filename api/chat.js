@@ -1,41 +1,99 @@
+const MAX_MESSAGE_CHARS = 8000;
+const MAX_HISTORY_ITEMS = 10;
+const MAX_HISTORY_CHARS = 12000;
+const REQUEST_TIMEOUT_MS = 45000;
+
 export default async function handler(req, res) {
+  res.setHeader("Cache-Control", "no-store");
+
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Method not allowed" });
   }
-  if (!process.env.OPENAI_API_KEY) {
-    return res.status(503).json({ error: "AI service is not configured yet. Add OPENAI_API_KEY in your hosting provider's environment variables." });
+
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    return res.status(503).json({
+      error: "AI service is not configured. Add OPENAI_API_KEY in Vercel → Project Settings → Environment Variables, then redeploy."
+    });
   }
+
+  const body = req.body && typeof req.body === "object" ? req.body : {};
+  const message = typeof body.message === "string" ? body.message.trim() : "";
+
+  if (!message) {
+    return res.status(400).json({ error: "Please enter a message." });
+  }
+  if (message.length > MAX_MESSAGE_CHARS) {
+    return res.status(413).json({ error: `Your message is too long. Please keep it under ${MAX_MESSAGE_CHARS} characters.` });
+  }
+
+  const incomingHistory = Array.isArray(body.history) ? body.history : [];
+  let historyChars = 0;
+  const safeHistory = incomingHistory
+    .slice(-MAX_HISTORY_ITEMS)
+    .filter((item) => {
+      if (!item || !["user", "assistant"].includes(item.role) || typeof item.content !== "string") return false;
+      const content = item.content.trim();
+      if (!content || content.length > MAX_MESSAGE_CHARS) return false;
+      historyChars += content.length;
+      return historyChars <= MAX_HISTORY_CHARS;
+    })
+    .map(({ role, content }) => ({ role, content: content.trim() }));
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
   try {
-    const { message, history = [] } = req.body || {};
-    if (typeof message !== "string" || !message.trim()) {
-      return res.status(400).json({ error: "Please enter a message." });
-    }
-    const safeHistory = Array.isArray(history) ? history.slice(-10).filter(m =>
-      m && ["user", "assistant"].includes(m.role) && typeof m.content === "string"
-    ) : [];
     const upstream = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
+      signal: controller.signal,
       headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
         model: process.env.OPENAI_MODEL || "gpt-4o-mini",
         messages: [
-          { role: "system", content: "You are MELEEY AI, a helpful, accurate assistant. Reply in the language the user uses. Be clear and practical. Do not claim to browse the internet unless a browsing tool is connected." },
+          {
+            role: "system",
+            content: "You are MELEEY AI, a helpful and accurate assistant. Reply in the language the user uses. Be clear, practical, and honest. Do not claim to browse the internet or access live information unless a browsing tool is actually enabled."
+          },
           ...safeHistory,
-          { role: "user", content: message.trim() }
+          { role: "user", content: message }
         ],
-        temperature: 0.7
+        temperature: 0.7,
+        max_tokens: 1400
       })
     });
-    const data = await upstream.json();
-    if (!upstream.ok) {
-      return res.status(upstream.status).json({ error: data?.error?.message || "AI provider request failed." });
+
+    let data;
+    try {
+      data = await upstream.json();
+    } catch {
+      return res.status(502).json({ error: "The AI provider returned an unreadable response. Please try again." });
     }
-    return res.status(200).json({ reply: data.choices?.[0]?.message?.content || "No response was returned." });
+
+    if (!upstream.ok) {
+      const status = upstream.status === 429 ? 429 : upstream.status >= 500 ? 502 : 400;
+      const providerMessage = data?.error?.message;
+      return res.status(status).json({
+        error: typeof providerMessage === "string" ? providerMessage.slice(0, 500) : "The AI provider could not complete the request."
+      });
+    }
+
+    const reply = data?.choices?.[0]?.message?.content;
+    if (typeof reply !== "string" || !reply.trim()) {
+      return res.status(502).json({ error: "The AI returned an empty response. Please try again." });
+    }
+
+    return res.status(200).json({ reply: reply.trim() });
   } catch (error) {
-    return res.status(500).json({ error: "Server error while contacting the AI service." });
+    if (error?.name === "AbortError") {
+      return res.status(504).json({ error: "The AI request took too long. Please try again." });
+    }
+    return res.status(502).json({ error: "Could not connect to the AI service. Please try again shortly." });
+  } finally {
+    clearTimeout(timeout);
   }
 }
