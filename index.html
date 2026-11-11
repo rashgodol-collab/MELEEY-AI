@@ -80,6 +80,38 @@ body.chat-active .message-list{padding-bottom:12px}
 .crumb{color:#777}.crumb b{color:#333}
 .content{background:#fff}
 @media(max-width:760px){.layout{grid-template-columns:1fr}.sidebar{display:none}}
+
+/* Conversation layout tuned to the supplied ChatGPT reference */
+.message-list{width:min(790px,100%);margin:0 auto;gap:28px;padding:28px 0 18px}
+.message{display:flex;gap:0;align-items:flex-start;width:100%}
+.message-avatar{display:none}
+.message-bubble{max-width:78%;padding:12px 17px;border-radius:24px;background:#f1f1f1;color:#202123;font-size:16px;line-height:1.7}
+.message.user{justify-content:flex-end;flex-direction:column;align-items:flex-end}
+.message.user .message-bubble{background:#e8f2ff;color:#15304d;border-radius:26px;padding:13px 20px;max-width:78%}
+.message.assistant{justify-content:flex-start}
+.message.assistant .message-bubble{max-width:100%;padding:0;background:transparent;border-radius:0;color:#202123;font-size:16px;line-height:1.8}
+.message-actions{display:flex;gap:7px;margin:5px 0 0 0;align-items:center}
+.message-actions.user-actions{justify-content:flex-end;width:100%;padding-right:8px}
+.message-actions.assistant-actions{justify-content:flex-start}
+.message-action{border:0;background:transparent;color:#8a8a8a;border-radius:8px;padding:5px 7px;font-size:15px;min-width:29px}
+.message-action:hover{background:#f1f1f1;color:#333;border:0}
+.message-action.selected{background:#f2f2f2;color:#333;border:0}
+.answer{width:100%;max-width:none;margin:0 auto;background:transparent;border:0;border-radius:0;padding:0;box-shadow:none;flex:1}
+.answerhead{display:none}
+body.chat-active .content{width:100%;max-width:100%;padding:0 24px 120px;min-height:calc(100vh - 54px)}
+body.chat-active .answer{display:block}
+body.chat-active .message-list{padding-top:42px;padding-bottom:30px}
+body.chat-active .composer{position:fixed;left:calc(280px + (100vw - 280px - min(790px,100vw - 328px))/2);bottom:12px;width:min(790px,calc(100vw - 328px));max-width:790px;z-index:20;box-shadow:0 8px 30px #00000012;background:#fff;border:1px solid #e5e5e5;border-radius:28px;padding:12px 16px}
+body.chat-active .content{padding-bottom:150px}
+body.chat-active .answertext{display:none}
+body.chat-active .topbar{position:sticky;top:0}
+@media(max-width:760px){
+ body.chat-active .content{padding:0 15px 150px}
+ body.chat-active .composer{left:12px;bottom:10px;width:calc(100vw - 24px);padding:10px 12px}
+ body.chat-active .message-list{padding-top:28px}
+ .message-bubble,.message.assistant .message-bubble{font-size:15px}
+}
+
 </style>
 </head>
 <body>
@@ -218,7 +250,31 @@ async function shareMessage(text){try{if(navigator.share){await navigator.share(
 function deleteConversation(id){const chat=conversations.find(x=>x.id===id);if(!chat)return;if(!confirm('Delete "'+(chat.title||'New conversation')+'"? This cannot be undone.'))return;conversations=conversations.filter(x=>x.id!==id);saveConversations();if(activeConversationId===id)newChat();renderConversationList();}
 function deleteAllConversations(){if(!conversations.length){showNotice('There are no saved conversations to delete.');return;}if(!confirm('Delete ALL conversation history from this browser? This cannot be undone.'))return;conversations=[];saveConversations();newChat();renderConversationList();showNotice('All conversation history has been deleted from this browser.');}
 function renameConversation(id){const chat=conversations.find(x=>x.id===id);if(!chat)return;const title=prompt('Enter a new conversation title:',chat.title||'New conversation');if(title===null)return;const clean=title.trim().slice(0,70);if(!clean){showNotice('The conversation title cannot be empty.');return;}chat.title=clean;chat.updatedAt=Date.now();saveConversations();renderConversationList();}
-function renderMessages(messages){messageList.innerHTML='';messages.forEach((m,index)=>{const row=document.createElement('div');row.className='message '+(m.role==='user'?'user':'assistant');const av=document.createElement('div');av.className='message-avatar';av.textContent=m.role==='user'?'R':'✦';const bubble=document.createElement('div');bubble.className='message-bubble';bubble.textContent=m.content||'';if(Array.isArray(m.sources)&&m.sources.length){const list=document.createElement('div');list.className='source-list';const heading=document.createElement('b');heading.textContent='Sources';list.appendChild(heading);m.sources.forEach(source=>{if(!source||typeof source.link!=='string'||!/^https:\/\//i.test(source.link))return;const a=document.createElement('a');a.href=source.link;a.target='_blank';a.rel='noopener noreferrer';a.textContent=source.title||source.link;list.appendChild(a);});bubble.appendChild(list);}row.append(av,bubble);messageList.appendChild(row);if(m.role==='assistant'){const actions=document.createElement('div');actions.className='message-actions';const addAction=(label,title,handler,selected=false)=>{const b=document.createElement('button');b.type='button';b.className='message-action'+(selected?' selected':'');b.textContent=label;b.title=title;b.onclick=handler;actions.appendChild(b);return b;};addAction('▢ Copy','Copy response',async()=>{try{await navigator.clipboard.writeText(m.content||'');showNotice('Response copied to clipboard.');}catch{showNotice('Copy is not available in this browser.');}});addAction('👍','Good response',()=>rateMessage(m,1),m.rating===1);addAction('👎','Poor response',()=>rateMessage(m,-1),m.rating===-1);addAction('▶ Read aloud','Read response aloud',()=>readMessage(m.content||''));addAction('↗ Share','Share response',()=>shareMessage(m.content||''));messageList.appendChild(actions);}});}
+function renderMessages(messages){
+ messageList.innerHTML='';
+ messages.forEach((m,index)=>{
+  const row=document.createElement('div');row.className='message '+(m.role==='user'?'user':'assistant');
+  const av=document.createElement('div');av.className='message-avatar';av.textContent=m.role==='user'?'R':'✦';
+  const bubble=document.createElement('div');bubble.className='message-bubble';bubble.textContent=m.content||'';
+  if(Array.isArray(m.sources)&&m.sources.length){const list=document.createElement('div');list.className='source-list';const heading=document.createElement('b');heading.textContent='Sources';list.appendChild(heading);m.sources.forEach(source=>{if(!source||typeof source.link!=='string'||!/^https:\/\//i.test(source.link))return;const a=document.createElement('a');a.href=source.link;a.target='_blank';a.rel='noopener noreferrer';a.textContent=source.title||source.link;list.appendChild(a);});bubble.appendChild(list);}
+  row.append(av,bubble);messageList.appendChild(row);
+  const actions=document.createElement('div');actions.className='message-actions '+(m.role==='user'?'user-actions':'assistant-actions');
+  const addAction=(label,title,handler,selected=false)=>{const b=document.createElement('button');b.type='button';b.className='message-action'+(selected?' selected':'');b.textContent=label;b.title=title;b.setAttribute('aria-label',title);b.onclick=handler;actions.appendChild(b);return b;};
+  if(m.role==='user'){
+   addAction('▢','Copy message',async()=>{try{await navigator.clipboard.writeText(m.content||'');showNotice('Message copied.');}catch{showNotice('Copy is not available in this browser.');}});
+   addAction('↥','Share message',()=>shareMessage(m.content||''));
+   addAction('✎','Edit message',()=>{input.value=m.content||'';input.focus();input.setSelectionRange(input.value.length,input.value.length);});
+  }else{
+   addAction('▢','Copy response',async()=>{try{await navigator.clipboard.writeText(m.content||'');showNotice('Response copied to clipboard.');}catch{showNotice('Copy is not available in this browser.');}});
+   addAction('👍','Good response',()=>rateMessage(m,1),m.rating===1);
+   addAction('👎','Poor response',()=>rateMessage(m,-1),m.rating===-1);
+   addAction('◖))','Read aloud',()=>readMessage(m.content||''));
+   addAction('↥','Share response',()=>shareMessage(m.content||''));
+   addAction('···','More options',()=>showNotice('More response options are coming soon.'));
+  }
+  messageList.appendChild(actions);
+ });
+}
 function openConversation(id){document.body.classList.add("chat-active");const chat=conversations.find(x=>x.id===id);if(!chat)return;activeConversationId=id;history=chat.messages.filter(m=>m.role==='user'||m.role==='assistant').map(m=>({role:m.role,content:m.content})).slice(-20);answer.style.display='block';answerText.textContent='';renderMessages(chat.messages);renderConversationList();input.focus();}
 function newChat(){if(activeConversationId){const previous=conversations.find(x=>x.id===activeConversationId);if(previous){previous.updatedAt=previous.updatedAt||Date.now();saveConversations();}}const search=document.getElementById("historySearch");if(search)search.value="";document.body.classList.remove("chat-active");activeConversationId=null;history=[];input.value="";answer.style.display="none";answerText.textContent="";messageList.innerHTML="";renderConversationList();input.focus();}
 function usePrompt(value){input.value=value;input.focus();input.setSelectionRange(input.value.length,input.value.length);}
