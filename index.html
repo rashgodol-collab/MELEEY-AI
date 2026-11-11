@@ -144,40 +144,73 @@ function renderConversationList(){
   });
 }
 function rateMessage(message,rating){message.rating=message.rating===rating?0:rating;saveConversations();renderConversationList();const chat=conversations.find(x=>x.id===activeConversationId);if(chat)renderMessages(chat.messages);showNotice(message.rating?'Thanks for your feedback.':'Your feedback was cleared.');}
+function detectSpeechLanguage(text){
+  const s=String(text||'');
+  const scripts=[
+    [/[؀-ۿ]/,'ar'],[/[一-鿿]/,'zh'],[/[぀-ヿ]/,'ja'],
+    [/[가-힯]/,'ko'],[/[Ѐ-ӿ]/,'ru'],[/[Ͱ-Ͽ]/,'el'],
+    [/[֐-׿]/,'he'],[/[฀-๿]/,'th'],[/[ऀ-ॿ]/,'hi'],
+    [/[ঀ-৿]/,'bn'],[/[஀-௿]/,'ta'],[/[ఀ-౿]/,'te'],
+    [/[ಀ-೿]/,'kn'],[/[ഀ-ൿ]/,'ml'],[/[က-႟]/,'my'],
+    [/[ក-៿]/,'km'],[/[਀-੿]/,'pa'],[/[઀-૿]/,'gu'],
+    [/[଀-୿]/,'or'],[/[඀-෿]/,'si'],[/[Ⴀ-ჿ]/,'ka'],
+    [/[԰-֏]/,'hy'],[/[ሀ-፿]/,'am'],[/[ހ-޿]/,'dv']
+  ];
+  for(const [pattern,lang] of scripts)if(pattern.test(s))return lang;
+  const lower=s.toLowerCase();
+  const markers=[
+    ['so',/\b(waa|waxaa|waxaan|waxa|haddii|sidee|sida|maxaa|mahadsanid|fadlan|ahay|tahay|yahay|iyo|laakiin|marka|halkan|samee|sheeg|fiican|sax)\b/g],
+    ['fr',/\b(bonjour|merci|avec|pour|vous|nous|une|des|est|dans|les|pas|je|suis|bonjour|aujourd)\b/g],
+    ['es',/\b(hola|gracias|para|como|porque|usted|nosotros|buenos|buenas|está|estoy|pero|que|los|las)\b/g],
+    ['pt',/\b(olá|obrigado|obrigada|você|vocês|não|uma|para|com|está|isso|também|porque)\b/g],
+    ['de',/\b(hallo|danke|und|nicht|ich|bin|ein|eine|der|die|das|mit|für|ist|auch)\b/g],
+    ['it',/\b(ciao|grazie|buongiorno|perché|sono|questo|questa|della|delle|con|non|che)\b/g],
+    ['nl',/\b(hallo|dank je|bedankt|het|een|niet|voor|met|zijn|jullie|goedemorgen)\b/g],
+    ['tr',/\b(merhaba|teşekkür|için|değil|nasıl|ben|sen|biz|ve|bir|çok|güzel)\b/g],
+    ['id',/\b(h halo|halo|terima kasih|untuk|dengan|yang|tidak|saya|anda|selamat|bagaimana)\b/g],
+    ['sw',/\b(jambo|asante|habari|karibu|tafadhali|kwa|ndiyo|hapana|sana|nini)\b/g],
+    ['en',/\b(the|and|you|that|this|with|for|are|what|how|is|was|will|can|your|hello|thanks)\b/g]
+  ];
+  let best='en',bestScore=0;
+  for(const [lang,re] of markers){const count=(lower.match(re)||[]).length;if(count>bestScore){best=lang;bestScore=count;}}
+  return best;
+}
 async function readMessage(text){
   if(!('speechSynthesis' in window)){showNotice('Read aloud is not supported in this browser.');return;}
-  if(speechSynthesis.speaking){speechSynthesis.cancel();return;}
+  const synth=window.speechSynthesis;
+  if(synth.speaking){synth.cancel();return;}
   const clean=String(text||'').trim();
   if(!clean)return;
-  const synth=window.speechSynthesis;
   let voices=synth.getVoices();
   if(!voices.length){
     await new Promise(resolve=>{
       const done=()=>resolve();
       synth.addEventListener('voiceschanged',done,{once:true});
-      setTimeout(done,1200);
+      setTimeout(done,1400);
     });
     voices=synth.getVoices();
   }
-  const somaliWords=/\\b(waa|waxaa|waxaan|waxa|haddii|sidee|sida|maxaa|mahadsanid|fadlan|ahay|tahay|yahay|ku|soo|iyo|laakiin|marka|halkan|halka|jirta|jirto|samee|sheeg|kale|fiican|sax)\\b/i;
-  const isArabic=/[\\u0600-\\u06FF]/.test(clean);
-  const isSomali=!isArabic&&somaliWords.test(clean);
-  const wanted=isArabic?'ar':(isSomali?'so':'en');
-  const femaleNames=/female|woman|zira|aria|jenny|samantha|ava|sara|michelle|natasha|susan|victoria|karen|moira|tessa|serena|siri.*female|google.*uk.*english.*female|english.*female/i;
-  const premiumNames=/natural|neural|premium|online|enhanced/i;
-  const score=v=>{
-    const n=(v.name||'').toLowerCase();
-    const lang=(v.lang||'').toLowerCase();
-    return (femaleNames.test(n)?100:0)+(lang.startsWith(wanted)?35:0)+(premiumNames.test(n)?20:0)+(!v.localService?8:0);
-  };
-  const ranked=[...voices].sort((a,b)=>score(b)-score(a));
-  let chosen=ranked.find(v=>femaleNames.test((v.name||'').toLowerCase())&&v.lang?.toLowerCase().startsWith(wanted));
-  if(!chosen)chosen=ranked.find(v=>femaleNames.test((v.name||'').toLowerCase()));
-  if(!chosen)chosen=ranked.find(v=>v.lang?.toLowerCase().startsWith(wanted));
-  if(!chosen)chosen=ranked.find(v=>v.lang?.toLowerCase().startsWith(isArabic?'ar':'en'));
+  const lang=detectSpeechLanguage(clean);
+  const female=/female|woman|zira|aria|jenny|samantha|ava|sara|michelle|natasha|susan|victoria|karen|moira|tessa|serena|siri.*female|google.*female/i;
+  const quality=/natural|neural|premium|online|enhanced/i;
+  const languageVoices=voices.filter(v=>(v.lang||'').toLowerCase().split(/[-_]/)[0]===lang);
+  const rank=list=>[...list].sort((a,b)=>{
+    const score=v=>(female.test(v.name||'')?100:0)+(quality.test(v.name||'')?25:0)+(!v.localService?8:0);
+    return score(b)-score(a);
+  });
+  let candidates=rank(languageVoices);
+  let chosen=candidates[0];
+  if(!chosen){
+    const related=voices.filter(v=>(v.lang||'').toLowerCase().startsWith(lang+'-'));
+    chosen=rank(related)[0];
+  }
+  if(!chosen){
+    showNotice('Cod akhris oo luqaddan taageera lagama helin browser-kaaga. Ku rakib cod luqadda '+lang+' ama adeegso browser/device codkiisa taageera.');
+    return;
+  }
   const utterance=new SpeechSynthesisUtterance(clean);
-  utterance.voice=chosen||null;
-  utterance.lang=chosen?.lang||(isArabic?'ar':(isSomali?'en-US':'en-US'));
+  utterance.voice=chosen;
+  utterance.lang=chosen.lang||lang;
   utterance.rate=0.94;
   utterance.pitch=1.12;
   utterance.volume=1;
