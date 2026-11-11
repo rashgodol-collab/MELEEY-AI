@@ -176,45 +176,38 @@ function detectSpeechLanguage(text){
   return best;
 }
 async function readMessage(text){
+  const clean=String(text||'').trim();
+  if(!clean)return;
+  if(window.meleeyAudio){window.meleeyAudio.pause();window.meleeyAudio=null;return;}
+  const lang=detectSpeechLanguage(clean);
+  try{
+    const response=await fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean,language:lang})});
+    if(response.ok){
+      const blob=await response.blob();
+      const audio=new Audio(URL.createObjectURL(blob));
+      window.meleeyAudio=audio;
+      audio.onended=()=>{URL.revokeObjectURL(audio.src);window.meleeyAudio=null;};
+      audio.onerror=()=>{URL.revokeObjectURL(audio.src);window.meleeyAudio=null;showNotice('Audio playback failed. Please try again.');};
+      await audio.play();
+      return;
+    }
+    const data=await response.json().catch(()=>({}));
+    if(response.status!==503)throw new Error(data.error||'Speech service is unavailable.');
+  }catch(error){
+    if(error.message!=='Failed to fetch')showNotice(error.message||'Could not create speech audio.');
+  }
   if(!('speechSynthesis' in window)){showNotice('Read aloud is not supported in this browser.');return;}
   const synth=window.speechSynthesis;
   if(synth.speaking){synth.cancel();return;}
-  const clean=String(text||'').trim();
-  if(!clean)return;
   let voices=synth.getVoices();
-  if(!voices.length){
-    await new Promise(resolve=>{
-      const done=()=>resolve();
-      synth.addEventListener('voiceschanged',done,{once:true});
-      setTimeout(done,1400);
-    });
-    voices=synth.getVoices();
-  }
-  const lang=detectSpeechLanguage(clean);
-  const female=/female|woman|zira|aria|jenny|samantha|ava|sara|michelle|natasha|susan|victoria|karen|moira|tessa|serena|siri.*female|google.*female/i;
-  const quality=/natural|neural|premium|online|enhanced/i;
-  const languageVoices=voices.filter(v=>(v.lang||'').toLowerCase().split(/[-_]/)[0]===lang);
-  const rank=list=>[...list].sort((a,b)=>{
-    const score=v=>(female.test(v.name||'')?100:0)+(quality.test(v.name||'')?25:0)+(!v.localService?8:0);
-    return score(b)-score(a);
-  });
-  let candidates=rank(languageVoices);
-  let chosen=candidates[0];
-  if(!chosen){
-    const related=voices.filter(v=>(v.lang||'').toLowerCase().startsWith(lang+'-'));
-    chosen=rank(related)[0];
-  }
-  if(!chosen){
-    showNotice('Cod akhris oo luqaddan taageera lagama helin browser-kaaga. Ku rakib cod luqadda '+lang+' ama adeegso browser/device codkiisa taageera.');
-    return;
-  }
+  if(!voices.length){await new Promise(resolve=>{synth.addEventListener('voiceschanged',resolve,{once:true});setTimeout(resolve,1200);});voices=synth.getVoices();}
+  const female=/female|woman|zira|aria|jenny|samantha|ava|sara|michelle|natasha|susan|victoria|karen|moira|tessa|serena/i;
+  const candidates=voices.filter(v=>(v.lang||'').toLowerCase().startsWith(lang.toLowerCase()));
+  candidates.sort((a,b)=>(female.test(b.name)?1:0)-(female.test(a.name)?1:0));
+  const chosen=candidates[0];
+  if(!chosen){showNotice('Cod luqaddan ah lagama helin browser-ka. Ku dar AZURE_SPEECH_KEY iyo AZURE_SPEECH_REGION gudaha Vercel si cod AI ah loo isticmaalo.');return;}
   const utterance=new SpeechSynthesisUtterance(clean);
-  utterance.voice=chosen;
-  utterance.lang=chosen.lang||lang;
-  utterance.rate=0.94;
-  utterance.pitch=1.12;
-  utterance.volume=1;
-  utterance.onerror=()=>showNotice('Codka lama ciyaari karin. Hubi codadka browser-kaaga.');
+  utterance.voice=chosen;utterance.lang=chosen.lang||lang;utterance.rate=.94;utterance.pitch=1.08;utterance.volume=1;
   synth.speak(utterance);
 }
 async function shareMessage(text){try{if(navigator.share){await navigator.share({title:'MELEEY AI response',text});}else{await navigator.clipboard.writeText(text);showNotice('Sharing is not available here. Response copied so you can share it.');}}catch(err){if(err.name!=='AbortError')showNotice('Could not share this response.');}}
