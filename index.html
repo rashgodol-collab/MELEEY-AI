@@ -77,7 +77,34 @@ try{session=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch{session
 function saveConversations(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(conversations.slice(0,60)));}catch{showNotice('Browser storage is full. Your latest chat may not be saved.');}}
 function renderConversationList(){historyList.innerHTML='';const term=(document.getElementById('historySearch')?.value||'').trim().toLowerCase();const visible=[...conversations].filter(chat=>(chat.title||'New conversation').toLowerCase().includes(term)).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));if(!visible.length){const empty=document.createElement('div');empty.className='history-empty';empty.textContent=conversations.length?(term?'No matching conversations.':'Your conversations will appear here.'):'Your conversations will appear here.';historyList.appendChild(empty);return;}visible.forEach(chat=>{const row=document.createElement('div');row.className='history-row'+(chat.id===activeConversationId?' active':'');const b=document.createElement('button');b.className='history-item';b.textContent=chat.title||'New conversation';b.title=chat.title||'New conversation';b.onclick=()=>openConversation(chat.id);const rename=document.createElement('button');rename.className='history-action rename';rename.type='button';rename.textContent='✎';rename.title='Rename conversation';rename.setAttribute('aria-label','Rename conversation');rename.onclick=()=>renameConversation(chat.id);const del=document.createElement('button');del.className='history-action';del.type='button';del.textContent='×';del.title='Delete conversation';del.setAttribute('aria-label','Delete conversation');del.onclick=()=>deleteConversation(chat.id);row.append(b,rename,del);historyList.appendChild(row);});}
 function rateMessage(message,rating){message.rating=message.rating===rating?0:rating;saveConversations();renderConversationList();const chat=conversations.find(x=>x.id===activeConversationId);if(chat)renderMessages(chat.messages);showNotice(message.rating?'Thanks for your feedback.':'Your feedback was cleared.');}
-function readMessage(text){if(!('speechSynthesis' in window)){showNotice('Read aloud is not supported in this browser.');return;}if(speechSynthesis.speaking){speechSynthesis.cancel();return;}const utterance=new SpeechSynthesisUtterance(text);utterance.lang=/[\u0600-\u06FF]/.test(text)?'ar':'en-US';speechSynthesis.speak(utterance);}
+function readMessage(text){
+  if(!('speechSynthesis' in window)){showNotice('Read aloud is not supported in this browser.');return;}
+  if(speechSynthesis.speaking){speechSynthesis.cancel();return;}
+  const clean=String(text||'').trim();
+  if(!clean)return;
+  const somaliWords=/\b(waa|waxaa|waxaan|waxa|haddii|sidee|sida|maxaa|mahadsanid|fadlan|ahay|tahay|yahay|ku|soo|iyo|laakiin|marka|halkan|halka|jirta|jirto|samee|sheeg|kale| fiican|sax)\b/i;
+  const isArabic=/[\u0600-\u06FF]/.test(clean);
+  const isSomali=!isArabic&&somaliWords.test(clean);
+  const wantedLang=isArabic?'ar':(isSomali?'so':'en-US');
+  const voices=speechSynthesis.getVoices();
+  const matching=voices.filter(v=>v.lang&&v.lang.toLowerCase().startsWith(wantedLang.toLowerCase().split('-')[0]));
+  const preferred=matching.sort((a,b)=>{
+    const score=v=>((/natural|neural|premium|online|enhanced/i.test(v.name)?5:0)+(!v.localService?2:0)+(/female|zira|aria|jenny|samantha|ava|sara/i.test(v.name)?1:0));
+    return score(b)-score(a);
+  })[0];
+  const fallback=voices.filter(v=>v.lang&&v.lang.toLowerCase().startsWith(isArabic?'ar':'en')).sort((a,b)=>{
+    const score=v=>((/natural|neural|premium|online|enhanced/i.test(v.name)?5:0)+(!v.localService?2:0));
+    return score(b)-score(a);
+  })[0];
+  const utterance=new SpeechSynthesisUtterance(clean);
+  utterance.lang=preferred?.lang||fallback?.lang||wantedLang;
+  if(preferred||fallback)utterance.voice=preferred||fallback;
+  utterance.rate=0.96;
+  utterance.pitch=1.02;
+  utterance.volume=1;
+  utterance.onerror=()=>showNotice('Codka lama ciyaari karin. Hubi codadka browser-kaaga.');
+  speechSynthesis.speak(utterance);
+}
 async function shareMessage(text){try{if(navigator.share){await navigator.share({title:'MELEEY AI response',text});}else{await navigator.clipboard.writeText(text);showNotice('Sharing is not available here. Response copied so you can share it.');}}catch(err){if(err.name!=='AbortError')showNotice('Could not share this response.');}}
 function deleteConversation(id){const chat=conversations.find(x=>x.id===id);if(!chat)return;if(!confirm('Delete "'+(chat.title||'New conversation')+'"? This cannot be undone.'))return;conversations=conversations.filter(x=>x.id!==id);saveConversations();if(activeConversationId===id)newChat();renderConversationList();}
 function deleteAllConversations(){if(!conversations.length){showNotice('There are no saved conversations to delete.');return;}if(!confirm('Delete ALL conversation history from this browser? This cannot be undone.'))return;conversations=[];saveConversations();newChat();renderConversationList();showNotice('All conversation history has been deleted from this browser.');}
