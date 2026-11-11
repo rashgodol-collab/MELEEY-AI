@@ -123,7 +123,7 @@ body.sidebar-collapsed .sidebar{padding:14px 9px 12px;align-items:center}
 body.sidebar-collapsed .side-head{width:100%;flex-direction:column;gap:10px;padding:0 0 8px}
 body.sidebar-collapsed .brand{font-size:0;letter-spacing:0}
 body.sidebar-collapsed .brand span{font-size:16px;letter-spacing:-.5px}
-body.sidebar-collapsed .collapse-side{transform:rotate(180deg)}
+body.sidebar-collapsed .collapse-side{transform:none}
 body.sidebar-collapsed .newchat{width:48px;height:42px;padding:0;text-align:center;font-size:0;display:grid;place-items:center}
 body.sidebar-collapsed .newchat::first-letter{font-size:20px}
 body.sidebar-collapsed .navitem{width:48px;height:42px;padding:0;display:grid;place-items:center;font-size:0}
@@ -144,12 +144,18 @@ body.sidebar-collapsed.chat-active .composer{left:calc(72px + (100vw - 72px - mi
  body.sidebar-collapsed .sidebar{display:none}
 }
 
+
+.collapse-side{font-family:Arial,sans-serif;font-size:27px!important;font-weight:400;line-height:1;color:#666;border:1px solid #e8e8e8!important;background:#fff!important;box-shadow:0 1px 2px #00000008}
+.collapse-side span{display:block;transform:translateY(-1px)}
+.collapse-side:hover{border-color:#d5d5d5!important;background:#f6f6f6!important}
+body.sidebar-collapsed .side-head{align-items:center}
+
 </style>
 </head>
 <body>
 <div class="layout">
 <aside class="sidebar">
-  <div class="side-head"><div class="brand">MELEEY <span>AI</span></div><button class="collapse-side" type="button" title="Collapse sidebar" onclick="toggleSidebar()" aria-label="Collapse sidebar">◧</button></div>
+  <div class="side-head"><div class="brand">MELEEY <span>AI</span></div><button class="collapse-side" type="button" title="Collapse sidebar" onclick="toggleSidebar()" aria-label="Collapse sidebar"><span aria-hidden="true">‹</span></button></div>
   <button class="newchat" onclick="newChat()">✎ &nbsp; New chat</button>
   <nav class="main-nav">
     <button class="navitem" onclick="showNotice('Image generation will be available soon.')"><span class="navicon">▧</span>Images</button>
@@ -308,8 +314,8 @@ function renderMessages(messages){
  });
 }
 function openConversation(id){document.body.classList.add("chat-active");const chat=conversations.find(x=>x.id===id);if(!chat)return;activeConversationId=id;history=chat.messages.filter(m=>m.role==='user'||m.role==='assistant').map(m=>({role:m.role,content:m.content})).slice(-20);answer.style.display='block';answerText.textContent='';renderMessages(chat.messages);renderConversationList();input.focus();}
-function toggleSidebar(){const collapsed=document.body.classList.toggle('sidebar-collapsed');const button=document.querySelector('.collapse-side');if(button){button.title=collapsed?'Expand sidebar':'Collapse sidebar';button.setAttribute('aria-label',button.title);}try{localStorage.setItem('meleey_sidebar_collapsed',collapsed?'1':'0');}catch{}}
-try{if(localStorage.getItem('meleey_sidebar_collapsed')==='1'){document.body.classList.add('sidebar-collapsed');const b=document.querySelector('.collapse-side');if(b){b.title='Expand sidebar';b.setAttribute('aria-label','Expand sidebar');}}}catch{}
+function toggleSidebar(){const collapsed=document.body.classList.toggle('sidebar-collapsed');const button=document.querySelector('.collapse-side');if(button){button.title=collapsed?'Expand sidebar':'Collapse sidebar';button.setAttribute('aria-label',button.title);const arrow=button.querySelector('span');if(arrow)arrow.textContent=collapsed?'›':'‹';}try{localStorage.setItem('meleey_sidebar_collapsed',collapsed?'1':'0');}catch{}}
+try{if(localStorage.getItem('meleey_sidebar_collapsed')==='1'){document.body.classList.add('sidebar-collapsed');const b=document.querySelector('.collapse-side');if(b){b.title='Expand sidebar';b.setAttribute('aria-label','Expand sidebar');const arrow=b.querySelector('span');if(arrow)arrow.textContent='›';}}}catch{}
 function newChat(){if(activeConversationId){const previous=conversations.find(x=>x.id===activeConversationId);if(previous){previous.updatedAt=previous.updatedAt||Date.now();saveConversations();}}const search=document.getElementById("historySearch");if(search)search.value="";document.body.classList.remove("chat-active");activeConversationId=null;history=[];input.value="";answer.style.display="none";answerText.textContent="";messageList.innerHTML="";renderConversationList();input.focus();}
 function usePrompt(value){input.value=value;input.focus();input.setSelectionRange(input.value.length,input.value.length);}
 function removeAttachedFile(){attachedFileText='';attachedFileName='';document.getElementById('fileInput').value='';document.getElementById('fileChip').style.display='none';}
