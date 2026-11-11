@@ -2,33 +2,41 @@
 
 MELEEY AI is a responsive Somali/English AI chat app with a dark-and-gold interface.
 
-## Current Step 1 features
+## Current features
 - Responsive chat interface
 - Server-side Free AI endpoint at `/api/chat` using Groq
+- Optional web search through Tavily at `/api/search`
 - Health endpoint at `/api/health`
-- Recent conversation context (kept in the browser session)
-- Server-side API key handling
+- Recent conversation history stored in the browser
+- Supabase email signup/login UI (requires Supabase configuration)
 - Free plan: $0
 - Pro plan display: $5/month (checkout is not enabled yet)
 
-## Deploy on Vercel
-1. Import `rashgodol-collab/MELEEY-AI` into Vercel.
-2. In Project Settings → Environment Variables, add:
-   - Name: `GROQ_API_KEY`
-   - Value: your private Groq API key
-3. Optional:
-   - `GROQ_MODEL` — a model supported by your Groq account. Default: `openai/gpt-oss-120b`.
-4. Deploy or redeploy after changing environment variables.
+## Vercel environment variables
 
-## Important security notes
-- Never put an API key in `index.html`, commit it to GitHub, or share it in chat.
-- Add secrets only in Vercel Environment Variables.
-- API use is subject to the provider's free-tier limits and availability.
+Add these under Project Settings → Environment Variables, then redeploy:
 
-## Not implemented yet
-- Live web search and sourced citations
-- File uploads and image understanding
-- User accounts and persistent cloud chat history
-- Pro checkout, subscriptions, and payment verification
+Required for Free AI:
+- `GROQ_API_KEY` — private Groq API key
 
-The Pro price shown in the interface is a planned price only. Do not charge users until secure authentication, payment processing, and server-side plan verification are implemented.
+Required for Supabase email authentication:
+- `SUPABASE_URL` — Supabase project URL
+- `SUPABASE_ANON_KEY` — Supabase publishable key (safe for browser use)
+
+Optional for web search:
+- `TAVILY_API_KEY` — private Tavily API key. The free Researcher plan currently includes 1,000 credits/month with no credit card required. Search requests are made server-side; the key is never sent to the browser.
+
+Optional:
+- `GROQ_MODEL` — a model supported by your Groq account. Default: `openai/gpt-oss-120b`.
+
+## Current limitations
+- Chat history is local to the browser, not synced to a cloud account.
+- Supabase auth UI is present, but authenticated chat storage, session refresh, and account-level plan enforcement are not implemented.
+- Pro checkout, subscriptions, and payment verification are not implemented. The $5/month price is planned only.
+- File uploads, image understanding, and cloud library are not implemented.
+
+## Security notes
+- Never put private API keys in `index.html` or commit them to GitHub.
+- Add private keys only in Vercel Environment Variables.
+- Never expose the Supabase service-role key in browser code.
+- API use is subject to provider limits and availability.
