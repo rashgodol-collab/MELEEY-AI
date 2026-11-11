@@ -30,6 +30,9 @@ body.chat-active .message-list{padding-bottom:12px}
 .message-bubble{white-space:pre-wrap}.message-actions{display:flex;flex-wrap:wrap;gap:5px;margin:7px 0 0 37px}.message-action{border:1px solid #e6e9ee;background:#fff;color:#68717e;border-radius:7px;padding:5px 8px;font-size:10px;cursor:pointer}.message-action:hover{border-color:#d2bc8d;color:#8a682d;background:#fbf8f1}.message-action.selected{background:#f6efdf;border-color:#d9c69e;color:#88672e}.message-action:disabled{opacity:.5;cursor:default}
 .footer{padding:16px 22px;text-align:center;color:#a0a7b1;font-size:10px;border-top:1px solid var(--line);background:#fff}
 @media(max-width:760px){.layout{grid-template-columns:1fr}.sidebar{display:none}.topbar{height:58px;padding:0 15px}.content{padding:28px 15px}.welcome{margin:18px auto 24px}.suggestions{grid-template-columns:1fr}.suggestion{display:flex;gap:10px;align-items:center}.suggestion .sicon{font-size:20px}.suggestion b{margin:0 0 2px}.plans{grid-template-columns:1fr}.sectiontitle{margin-top:30px}.status{font-size:10px}.tools .hint{display:none}}
+
+.history-group-title{padding:15px 12px 7px;color:var(--muted,#929292);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.history-row.active .history-item{font-weight:600}
 </style>
 </head>
 <body>
@@ -75,7 +78,71 @@ let conversations=[],activeConversationId=null,history=[],authMode='login',authC
 try{const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');if(Array.isArray(saved))conversations=saved.filter(x=>x&&typeof x.id==='string'&&Array.isArray(x.messages));}catch{conversations=[];}
 try{session=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch{session=null;}
 function saveConversations(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(conversations.slice(0,60)));}catch{showNotice('Browser storage is full. Your latest chat may not be saved.');}}
-function renderConversationList(){historyList.innerHTML='';const term=(document.getElementById('historySearch')?.value||'').trim().toLowerCase();const visible=[...conversations].filter(chat=>(chat.title||'New conversation').toLowerCase().includes(term)).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));if(!visible.length){const empty=document.createElement('div');empty.className='history-empty';empty.textContent=conversations.length?(term?'No matching conversations.':'Your conversations will appear here.'):'Your conversations will appear here.';historyList.appendChild(empty);return;}visible.forEach(chat=>{const row=document.createElement('div');row.className='history-row'+(chat.id===activeConversationId?' active':'');const b=document.createElement('button');b.className='history-item';b.textContent=chat.title||'New conversation';b.title=chat.title||'New conversation';b.onclick=()=>openConversation(chat.id);const rename=document.createElement('button');rename.className='history-action rename';rename.type='button';rename.textContent='✎';rename.title='Rename conversation';rename.setAttribute('aria-label','Rename conversation');rename.onclick=()=>renameConversation(chat.id);const del=document.createElement('button');del.className='history-action';del.type='button';del.textContent='×';del.title='Delete conversation';del.setAttribute('aria-label','Delete conversation');del.onclick=()=>deleteConversation(chat.id);row.append(b,rename,del);historyList.appendChild(row);});}
+function renderConversationList(){
+  historyList.innerHTML='';
+  const term=(document.getElementById('historySearch')?.value||'').trim().toLowerCase();
+  const now=new Date();
+  const todayStart=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
+  const yesterdayStart=todayStart-86400000;
+  const weekStart=todayStart-7*86400000;
+  const sorted=[...conversations].sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  const visible=sorted.filter(chat=>{
+    const title=(chat.title||'New conversation').toLowerCase();
+    const content=(chat.messages||[]).map(m=>m.content||'').join(' ').toLowerCase();
+    return !term||title.includes(term)||content.includes(term);
+  });
+  if(!visible.length){
+    const empty=document.createElement('div');
+    empty.className='history-empty';
+    empty.textContent=conversations.length?(term?'No matching conversations.':'Your conversations will appear here.'):'Your conversations will appear here.';
+    historyList.appendChild(empty);
+    return;
+  }
+  const groups=[
+    {name:'Today',items:[]},
+    {name:'Yesterday',items:[]},
+    {name:'Previous 7 days',items:[]},
+    {name:'Older',items:[]}
+  ];
+  visible.forEach(chat=>{
+    const stamp=Number(chat.updatedAt)||0;
+    const group=stamp>=todayStart?groups[0]:stamp>=yesterdayStart?groups[1]:stamp>=weekStart?groups[2]:groups[3];
+    group.items.push(chat);
+  });
+  groups.forEach(group=>{
+    if(!group.items.length)return;
+    const heading=document.createElement('div');
+    heading.className='history-group-title';
+    heading.textContent=group.name;
+    historyList.appendChild(heading);
+    group.items.forEach(chat=>{
+      const row=document.createElement('div');
+      row.className='history-row'+(chat.id===activeConversationId?' active':'');
+      const b=document.createElement('button');
+      b.className='history-item';
+      b.type='button';
+      b.textContent=chat.title||'New conversation';
+      b.title=chat.title||'New conversation';
+      b.onclick=()=>openConversation(chat.id);
+      const rename=document.createElement('button');
+      rename.className='history-action rename';
+      rename.type='button';
+      rename.textContent='✎';
+      rename.title='Rename conversation';
+      rename.setAttribute('aria-label','Rename conversation');
+      rename.onclick=()=>renameConversation(chat.id);
+      const del=document.createElement('button');
+      del.className='history-action';
+      del.type='button';
+      del.textContent='×';
+      del.title='Delete conversation';
+      del.setAttribute('aria-label','Delete conversation');
+      del.onclick=()=>deleteConversation(chat.id);
+      row.append(b,rename,del);
+      historyList.appendChild(row);
+    });
+  });
+}
 function rateMessage(message,rating){message.rating=message.rating===rating?0:rating;saveConversations();renderConversationList();const chat=conversations.find(x=>x.id===activeConversationId);if(chat)renderMessages(chat.messages);showNotice(message.rating?'Thanks for your feedback.':'Your feedback was cleared.');}
 function readMessage(text){
   if(!('speechSynthesis' in window)){showNotice('Read aloud is not supported in this browser.');return;}
