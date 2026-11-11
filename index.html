@@ -173,6 +173,80 @@ body.explore-active .main{min-width:0;min-height:100vh}body.explore-active .cont
 body.explore-active .content> :not(#explorePage){display:none!important;visibility:hidden!important}
 body.explore-active #explorePage{display:block!important;visibility:visible!important;position:relative;z-index:1}
 body.explore-active #answer,body.explore-active #messageList,body.explore-active #answertext,body.explore-active .composer,body.explore-active #prompt{display:none!important}
+
+/* RAASH premium sidebar refresh — visual-only styling */
+.sidebar{
+  background:
+    radial-gradient(ellipse at 12% 0%,rgba(201,164,76,.13),transparent 34%),
+    linear-gradient(165deg,#17191e 0%,#101114 58%,#171611 100%) !important;
+  color:#f4f0e7 !important;border-right:1px solid rgba(201,164,76,.22) !important;
+  padding:22px 14px 14px !important;gap:10px !important;
+  box-shadow:8px 0 32px rgba(19,17,12,.055);
+}
+.side-head{padding:2px 5px 16px !important;border-bottom:1px solid rgba(229,204,139,.13);margin-bottom:3px}
+.brand{color:#f8f3e8 !important;font-size:21px !important;font-weight:850 !important;letter-spacing:1.15px !important}
+.brand span{color:#e5cc8b !important}
+.collapse-side{
+  color:#d8c69f !important;background:rgba(255,255,255,.045) !important;
+  border:1px solid rgba(229,204,139,.2) !important;border-radius:11px !important;
+  box-shadow:none !important;width:34px;height:34px;
+}
+.collapse-side:hover{background:rgba(201,164,76,.15) !important;border-color:#c9a44c !important;color:#fff !important}
+.newchat{
+  margin:2px 1px 8px !important;padding:12px 14px !important;
+  border:1px solid rgba(229,204,139,.48) !important;border-radius:13px !important;
+  background:linear-gradient(110deg,#d8b66c,#f0d99f 52%,#c9a44c) !important;
+  color:#191710 !important;font-weight:750 !important;font-size:13px !important;
+  box-shadow:0 5px 18px rgba(201,164,76,.13);transition:transform .18s,box-shadow .18s;
+}
+.newchat:hover{background:linear-gradient(110deg,#e7c77e,#f7e7b9 52%,#d6b15b) !important;transform:translateY(-1px);box-shadow:0 8px 22px rgba(201,164,76,.2)}
+.main-nav{gap:4px !important;padding:0 1px}
+.navitem{
+  display:flex;align-items:center;min-height:42px;padding:10px 12px !important;
+  border:1px solid transparent !important;border-radius:11px !important;
+  color:#c3c0b8 !important;font-size:13px !important;font-weight:550;
+  transition:background .18s,border-color .18s,color .18s,transform .18s;
+}
+.navicon{width:29px !important;color:#d0ad62 !important;font-size:17px !important}
+.navitem:hover{background:rgba(255,255,255,.065) !important;border-color:rgba(229,204,139,.12) !important;color:#fff !important;transform:translateX(2px)}
+.navitem.active{background:linear-gradient(100deg,rgba(201,164,76,.2),rgba(201,164,76,.075)) !important;border-color:rgba(201,164,76,.28) !important;color:#f4d995 !important;box-shadow:inset 3px 0 #c9a44c}
+.navitem.active .navicon{color:#f0d28c !important}
+.side-section-head{color:#a99b7c !important;font-size:10px !important;font-weight:800 !important;letter-spacing:1.5px !important;text-transform:uppercase;padding:15px 9px 5px !important}
+.side-section-head button{color:#d8c28f !important;border-radius:8px}
+.side-section-head button:hover{background:rgba(201,164,76,.14) !important;color:#fff !important}
+.project-empty{color:#77766f !important;font-size:12px !important;padding:7px 10px 10px !important}
+.history-tools{padding:0 3px 5px !important}
+.history-tools input{background:rgba(255,255,255,.055) !important;border:1px solid rgba(255,255,255,.09) !important;border-radius:10px !important;color:#f5f0e5 !important;padding:9px 10px !important;font-size:11px !important}
+.history-tools input:focus{outline:1px solid rgba(201,164,76,.55);border-color:rgba(201,164,76,.4) !important}
+.history-tools input::placeholder{color:#89877f !important}
+.history-delete-all{background:rgba(255,255,255,.045) !important;border:1px solid rgba(255,255,255,.1) !important;color:#c5bda9 !important;border-radius:9px !important}
+.history-delete-all:hover{background:rgba(190,75,75,.15) !important;color:#ffc5c5 !important}
+.history-list{scrollbar-width:thin;scrollbar-color:#4b4435 transparent}
+.history-group-title{color:#92866c !important;padding:12px 10px 5px !important;font-size:10px !important;letter-spacing:1.1px !important;text-transform:uppercase !important}
+.history-row{border:1px solid transparent !important}
+.history-row:hover,.history-row.active{background:rgba(255,255,255,.065) !important;border-color:rgba(229,204,139,.12) !important}
+.history-item{color:#c8c5bd !important;padding:9px 9px !important}
+.history-title{color:inherit !important;font-size:12px !important}
+.history-row.active .history-item{color:#f2d795 !important}
+.history-action{color:#aaa18d !important}
+.history-action:hover{background:rgba(201,164,76,.16) !important;color:#f2d795 !important}
+.history-menu{background:#202127 !important;border-color:#4b4435 !important;box-shadow:0 12px 32px #0008 !important}
+.history-menu button{color:#eee8db !important}
+.history-menu button:hover{background:#303039 !important}
+.history-menu .menu-separator{background:#3a3832 !important}
+.history-empty{color:#89867e !important}
+.sidebottom{border-top:1px solid rgba(229,204,139,.16) !important;padding:14px 5px 3px !important;margin-top:9px !important}
+.profile{color:#f0ebdf !important;gap:10px !important}
+.avatar{background:linear-gradient(145deg,#e6ca89,#a77d35) !important;color:#211b10 !important;border:1px solid rgba(255,255,255,.28);box-shadow:0 3px 12px #0004}
+.profile span{color:#a9a397 !important}
+.profile-upgrade{background:rgba(201,164,76,.12) !important;border:1px solid rgba(201,164,76,.4) !important;color:#e8cf91 !important;border-radius:9px !important;padding:7px 10px !important;font-weight:700}
+.profile-upgrade:hover{background:rgba(201,164,76,.22) !important;color:#fff !important}
+body.sidebar-collapsed .sidebar{background:linear-gradient(165deg,#17191e,#101114 65%,#171611) !important}
+body.sidebar-collapsed .collapse-side{background:rgba(255,255,255,.045) !important}
+body.sidebar-collapsed .navitem{border-radius:12px !important}
+body.sidebar-collapsed .navitem.active{box-shadow:inset 0 -3px #c9a44c !important}
+@media(max-width:760px){.sidebar{display:none !important}}
+
 </style>
 </head>
 <body>
