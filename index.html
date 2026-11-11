@@ -144,33 +144,45 @@ function renderConversationList(){
   });
 }
 function rateMessage(message,rating){message.rating=message.rating===rating?0:rating;saveConversations();renderConversationList();const chat=conversations.find(x=>x.id===activeConversationId);if(chat)renderMessages(chat.messages);showNotice(message.rating?'Thanks for your feedback.':'Your feedback was cleared.');}
-function readMessage(text){
+async function readMessage(text){
   if(!('speechSynthesis' in window)){showNotice('Read aloud is not supported in this browser.');return;}
   if(speechSynthesis.speaking){speechSynthesis.cancel();return;}
   const clean=String(text||'').trim();
   if(!clean)return;
-  const somaliWords=/\b(waa|waxaa|waxaan|waxa|haddii|sidee|sida|maxaa|mahadsanid|fadlan|ahay|tahay|yahay|ku|soo|iyo|laakiin|marka|halkan|halka|jirta|jirto|samee|sheeg|kale| fiican|sax)\b/i;
-  const isArabic=/[\u0600-\u06FF]/.test(clean);
+  const synth=window.speechSynthesis;
+  let voices=synth.getVoices();
+  if(!voices.length){
+    await new Promise(resolve=>{
+      const done=()=>resolve();
+      synth.addEventListener('voiceschanged',done,{once:true});
+      setTimeout(done,1200);
+    });
+    voices=synth.getVoices();
+  }
+  const somaliWords=/\\b(waa|waxaa|waxaan|waxa|haddii|sidee|sida|maxaa|mahadsanid|fadlan|ahay|tahay|yahay|ku|soo|iyo|laakiin|marka|halkan|halka|jirta|jirto|samee|sheeg|kale|fiican|sax)\\b/i;
+  const isArabic=/[\\u0600-\\u06FF]/.test(clean);
   const isSomali=!isArabic&&somaliWords.test(clean);
-  const wantedLang=isArabic?'ar':(isSomali?'so':'en-US');
-  const voices=speechSynthesis.getVoices();
-  const matching=voices.filter(v=>v.lang&&v.lang.toLowerCase().startsWith(wantedLang.toLowerCase().split('-')[0]));
-  const preferred=matching.sort((a,b)=>{
-    const score=v=>((/female|zira|aria|jenny|samantha|ava|sara|michelle|natasha|susan| victoria|karen|moira|tessa/i.test(v.name)?10:0)+(/natural|neural|premium|online|enhanced/i.test(v.name)?5:0)+(!v.localService?2:0));
-    return score(b)-score(a);
-  })[0];
-  const fallback=voices.filter(v=>v.lang&&v.lang.toLowerCase().startsWith(isArabic?'ar':'en')).sort((a,b)=>{
-    const score=v=>((/female|zira|aria|jenny|samantha|ava|sara|michelle|natasha|susan|victoria|karen|moira|tessa/i.test(v.name)?10:0)+(/natural|neural|premium|online|enhanced/i.test(v.name)?5:0)+(!v.localService?2:0));
-    return score(b)-score(a);
-  })[0];
+  const wanted=isArabic?'ar':(isSomali?'so':'en');
+  const femaleNames=/female|woman|zira|aria|jenny|samantha|ava|sara|michelle|natasha|susan|victoria|karen|moira|tessa|serena|siri.*female|google.*uk.*english.*female|english.*female/i;
+  const premiumNames=/natural|neural|premium|online|enhanced/i;
+  const score=v=>{
+    const n=(v.name||'').toLowerCase();
+    const lang=(v.lang||'').toLowerCase();
+    return (femaleNames.test(n)?100:0)+(lang.startsWith(wanted)?35:0)+(premiumNames.test(n)?20:0)+(!v.localService?8:0);
+  };
+  const ranked=[...voices].sort((a,b)=>score(b)-score(a));
+  let chosen=ranked.find(v=>femaleNames.test((v.name||'').toLowerCase())&&v.lang?.toLowerCase().startsWith(wanted));
+  if(!chosen)chosen=ranked.find(v=>femaleNames.test((v.name||'').toLowerCase()));
+  if(!chosen)chosen=ranked.find(v=>v.lang?.toLowerCase().startsWith(wanted));
+  if(!chosen)chosen=ranked.find(v=>v.lang?.toLowerCase().startsWith(isArabic?'ar':'en'));
   const utterance=new SpeechSynthesisUtterance(clean);
-  utterance.lang=preferred?.lang||fallback?.lang||wantedLang;
-  if(preferred||fallback)utterance.voice=preferred||fallback;
-  utterance.rate=0.96;
-  utterance.pitch=1.02;
+  utterance.voice=chosen||null;
+  utterance.lang=chosen?.lang||(isArabic?'ar':(isSomali?'en-US':'en-US'));
+  utterance.rate=0.94;
+  utterance.pitch=1.12;
   utterance.volume=1;
   utterance.onerror=()=>showNotice('Codka lama ciyaari karin. Hubi codadka browser-kaaga.');
-  speechSynthesis.speak(utterance);
+  synth.speak(utterance);
 }
 async function shareMessage(text){try{if(navigator.share){await navigator.share({title:'MELEEY AI response',text});}else{await navigator.clipboard.writeText(text);showNotice('Sharing is not available here. Response copied so you can share it.');}}catch(err){if(err.name!=='AbortError')showNotice('Could not share this response.');}}
 function deleteConversation(id){const chat=conversations.find(x=>x.id===id);if(!chat)return;if(!confirm('Delete "'+(chat.title||'New conversation')+'"? This cannot be undone.'))return;conversations=conversations.filter(x=>x.id!==id);saveConversations();if(activeConversationId===id)newChat();renderConversationList();}
