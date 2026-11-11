@@ -167,6 +167,11 @@ body.explore-active .main{min-width:0;min-height:100vh}body.explore-active .cont
 @media(max-width:760px){.map-location-row{align-items:stretch;flex-direction:column}.use-location-btn{width:100%}.explore-page{padding:25px 14px}.map-search-panel{padding:14px}.map-search-row{flex-wrap:wrap}.map-search-row button{width:100%}.map-frame-wrap{height:55vh;min-height:300px}.map-results-head{align-items:flex-start;flex-direction:column}}
 
  .map-layer-picker{display:inline-flex;align-items:center;gap:7px;border:1px solid #e1e5eb;border-radius:8px;padding:5px 9px;background:#fff;color:#596273;font-size:12px}.map-layer-picker select{border:0;background:transparent;color:#252b35;font:inherit;font-weight:650;outline:0;cursor:pointer;max-width:155px}.back-to-chat{display:none;margin-left:auto;white-space:nowrap}.back-to-chat:hover{border-color:#c9a44c;color:#8a682d}body.explore-active .back-to-chat{display:inline-flex}body.explore-active .topbar{gap:12px}@media(max-width:760px){body.explore-active .topbar{flex-wrap:wrap}.back-to-chat{order:3}.topright{margin-left:auto}}
+
+/* HARD ISOLATION: while Explore is open, render only the Explore workspace inside .content. */
+body.explore-active .content> :not(#explorePage){display:none!important;visibility:hidden!important}
+body.explore-active #explorePage{display:block!important;visibility:visible!important;position:relative;z-index:1}
+body.explore-active #answer,body.explore-active #messageList,body.explore-active #answertext,body.explore-active .composer,body.explore-active #prompt{display:none!important}
 </style>
 </head>
 <body>
