@@ -5,12 +5,14 @@ export default function handler(req, res) {
     return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
   const aiReady = Boolean(process.env.GROQ_API_KEY);
+  const webSearchReady = Boolean(process.env.GOOGLE_SEARCH_API_KEY && process.env.GOOGLE_SEARCH_ENGINE_ID);
   return res.status(200).json({
     ok: true,
     app: "MELEEY AI",
     server: "online",
     aiReady,
     freeReady: aiReady,
+    webSearchReady,
     proConfigured: Boolean(process.env.OPENAI_API_KEY),
     freeModel: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
     proPrice: 5,
